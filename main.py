@@ -1,25 +1,37 @@
 from crewai import Agent, Task, Process, Crew
 from langchain_community.llms import Ollama
+from langchain_community.tools import DuckDuckGoSearchRun, StackExchangeTool
 
 # To Load Local models through Ollama
 llm_mixtral = Ollama(model="mixtral")
-#llm_coder = Ollama(model="codellama:34b")
+llm_openhermes=Ollama(model="openhermes")
+llm_codellama = Ollama(model="codellama:34b")
+llm_dolphinmixtral = Ollama(model="dolphin-mixtral")
+
+stack_exchange_tool_api_config = {
+    "clé_api": "votre_clé_api",
+    "autres_paramètres": "valeurs"
+}
+
+# Initialisation de StackExchangeTool avec la configuration d'API requise
+stack_exchange_tool = StackExchangeTool(api_wrapper=stack_exchange_tool_api_config)
 
 po = Agent(
     role="Product Owner",
     goal="Ensure the detailed drafting of user stories",
-    backstory="""As the Product Owner of an Agile team, you excel at comprehending market demands, identifying the target audience, 
-        and analyzing the competition. This expertise is essential for validating if a concept addresses a market need and possesses 
-        the potential to captivate a broad audience. You are skilled at devising strategies to appeal to the widest possible audience, 
-        ensuring the product aligns with user stories and meets market expectations.
+    backstory="""As the Product Owner of an Agile team, you excel at comprehending business user demands, identifying the target audience, 
+        and analyzing the needs. This expertise is essential for validating if a concept addresses a user need. You are skilled at 
+        devising strategies to appeal to the widest possible need and expectation of the business, 
+        ensuring the product aligns with user stories and meets their expectations.
 		""",
     verbose=True,
     allow_delegation=False,
-    llm=llm_mixtral
+    llm=llm_openhermes,
+    tools=[DuckDuckGoSearchRun()]
 )
 
 developer = Agent(
-role="Bash Scripting Expert",
+role="Developer",
 goal="Implement the requirements outlined in each user story through coding",
 backstory="""You are a master of Bash scripting, with a profound knowledge of Unix-based systems. Your expertise is in writing 
         scripts and also understanding how these scripts can streamline operations, automate mundane tasks, and solve complex technical 
@@ -29,7 +41,8 @@ backstory="""You are a master of Bash scripting, with a profound knowledge of Un
         reliability, and driving technological efficiency.""",
     verbose=True,
     allow_delegation=False,
-    llm=llm_mixtral
+    llm=llm_dolphinmixtral,
+    tools=[stack_exchange_tool]
 )
 
 reviewver = Agent(
@@ -42,16 +55,16 @@ backstory="""You are a guardian of code quality, with a keen understanding of Ag
         continuous improvement. Your meticulous approach to reviewing code, coupled with your ability to foresee potential issues and recommend 
         proactive solutions, ensures the delivery of high-quality software that is robust, scalable, and aligned with the team's strategic goals.""",
     verbose=True,
-    allow_delegation=True,
-    llm=llm_mixtral
+    allow_delegation=False,
+    llm=llm_codellama
 )
 
 task1 = Task(
     description="""Develop user stories for a Bash script wrapper function designed to :
-        - Execute commands with parameters,
+        - Wrap commands with parameters execution,
         - Log execution information to a file, 
         - Manage status codes,
-        - Output result to stdout when available.
+        - Output result to stdout when there is one result.
         This tool aims to streamline and automate processes, enhancing operational efficiency and reliability. Your user stories should 
         clearly articulate the needs and expectations of the users, focusing on how they will interact with the wrapper to perform tasks 
         more effectively. Include scenarios covering a range of use cases, from simple command execution to complex workflows involving 
@@ -62,7 +75,7 @@ task1 = Task(
         - Thought:
         - Action Input:
         because they are part of the thinking process instead of the output.
-        Action Input should be formatted as coworker|task|context.
+        'Action Input' should be formatted with exact 3 pipe (|) separated values. For example, 'coworker|task|context'.
     """,
     agent=po,
 )
@@ -70,15 +83,14 @@ task1 = Task(
 task2 = Task(
     description="""Implement the user stories developed by your Product Owner. Your implementation should thoroughly 
     address each user story's requirements, providing a seamless experience for the end-users, focusing on creating a robust and efficient tool. 
-    The task involves coding the various operational scenarios described in the provided user stories. You will follow 'the stdout is for output, 
-    stderr is for messaging' principal. You ensure your code is clean, well-documented, and adheres to best practices for script development. 
+    The task involves coding the various operational scenarios described in the provided user stories. You ensure your code is clean, well-documented, and adheres to best practices for script development. 
     The final product should be a code formatted in markdown.
     These keywords must never be translated and transformed:
     - Action:
     - Thought:
     - Action Input:
     because they are part of the thinking process instead of the output.
-    Action Input should be formatted as coworker|task|context.
+    'Action Input' should be formatted with exact 3 pipe (|) separated values. For example, 'coworker|task|context'.
     """,
     agent=developer,
 )
@@ -94,7 +106,7 @@ task3 = Task(
     - Thought:
     - Action Input:
     because they are part of the thinking process instead of the output.
-    Action Input should be formatted as coworker|task|context.
+    'Action Input' should be formatted with exact 3 pipe (|) separated values. For example, 'coworker|task|context'.
     """,
     agent=reviewver,
 )
@@ -102,11 +114,11 @@ task3 = Task(
 crew = Crew(
     agents=[po, developer, reviewver],
     tasks=[task1, task2, task3],
-    verbose=2,
-    process=Process.sequential,
+    manager_llm=llm_mixtral,
+    process=Process.hierarchical,
+    full_output=True,
+    verbose=True
 )
 
 result = crew.kickoff()
-
-print("######################")
 print(result)

@@ -6,7 +6,7 @@ This Python project demonstrates an innovative approach to collaborative develop
 
 - **AI-Driven Agents**: Utilizes `crewai` to create agents with specific roles and goals, including a Product Owner, Bash Scripting Expert, and Reviewer.
 - **Language Model Integration**: Leverages `Ollama` from `langchain_community.llms` to load `Mixtral-8x7B` local models, enabling sophisticated language understanding and generation capabilities.
-- **Collaborative Task Management**: Demonstrates how these agents can work together as an Agile team, following a sequential process to ***Define*** user stories, ***Build*** implementation and ***Review*** code.
+- **Collaborative Task Management**: Demonstrates how these agents can work together as an Agile team, following a sequential process to ***Define*** user stories as a Product Owner, ***Build*** implementation as a Developer and ***Review*** code as a Reviewer.
 
 ## Installation
 
@@ -42,7 +42,8 @@ python main.py
 ## Dependencies
 
 - `crewai`: A library for creating and managing AI agents in collaborative tasks.
-- `langchain_community.llms`: Provides access to language models like `Ollama` for natural language understanding and generation.
+- `langchain_community.llms`: Provides access to language models like `Ollama` for natural language understanding 
+and generation and search tools like DuckDuckGo or StackExchange.
 
 ## Contributing
 
