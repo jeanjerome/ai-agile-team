@@ -1,2 +1,2 @@
-crewai
-langchain-community
+crewai==0.22.4
+langchain-community==0.0.31
